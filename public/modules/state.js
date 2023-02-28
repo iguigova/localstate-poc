@@ -1,4 +1,5 @@
 import { open, put, getall } from "./storage.js";
+import { traverse } from "./json.js";
 
 function getlocal(dbname, storename){
 
@@ -38,4 +39,90 @@ function get(input){
         .then((items) => getremote(url));
 }
 
-export { get } 
+function toState(json){
+    let items = [];
+    
+    for(let [key, value, path, parent] of traverse(json)) {
+        // do something here with each key and value
+
+        if (value === null || typeof(value) !== "object"){
+            items.push({id: path.join('.'), value: value})
+        }
+    }
+
+    return items;
+}
+
+function fromState(items){
+    let obj = isNaN(items && items.length > 0 && items[0].id.split('.')[0]) ? {} : [];
+    
+    for (let item of items){
+        set(item.id.split('.'), 0, item.value, obj);
+    }
+
+    return obj;
+}
+
+function set(path, index, value, obj){
+    // https://stackoverflow.com/questions/33066787/access-a-nested-property-with-a-string
+    let parent = path.slice(0, Math.min(index, path.length - 1)).reduce(function(p, prop) { return p[prop] }, obj);
+    let crumble = path[index];
+    
+    if (index < path.length - 1) {
+        
+        if (isNaN(crumble)){
+            parent[crumble] = parent[crumble] ?? (isNaN(path[index + 1]) ? {} : []);
+        } else {
+            parent = parent ?? [];
+            if (parent.length - 1 < crumble){
+                parent.push({});
+            }
+        }
+
+        set(path, index + 1, value, obj);
+        
+    } else if (index == path.length - 1){ // a leaf
+        parent[crumble] = value;
+    }
+}
+
+export { get, toState, fromState }
+
+/*
+[
+  {
+    "id": 1,
+    "title": "json-server",
+    "author": "typicode",
+    "comments": [
+      {
+        "id": 1,
+        "body": "some comment",
+        "postId": 1
+      }
+    ]
+  }
+]
+
+0.id = 1
+0.title = "json-server"
+0.comments.0.id = 1
+0.comments.0.body = "some comment"
+
+
+  {
+    "created_at":"MonSep3004:04:53+00002013",
+    "id_str":"384529256681725952",
+    "user": {
+      "id":31424214,
+      "location":"COLUMBUS"
+    },
+    "coordinates":{
+      "type":"Point",
+      "values":[
+         13,
+         99
+      ]
+    }
+  }
+*/
