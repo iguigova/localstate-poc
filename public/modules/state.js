@@ -1,5 +1,5 @@
 import { open, put, getall } from "./storage.js";
-import { traverse } from "./json.js";
+import { traverse, inverse } from "./json.js";
 
 function getlocal(dbname, storename){
 
@@ -43,7 +43,6 @@ function toState(json){
     let items = [];
     
     for(let [key, value, path, parent] of traverse(json)) {
-        // do something here with each key and value
 
         if (value === null || typeof(value) !== "object"){
             items.push({id: path.join('.'), value: value})
@@ -57,34 +56,12 @@ function fromState(items){
     let obj = isNaN(items && items.length > 0 && items[0].id.split('.')[0]) ? {} : [];
     
     for (let item of items){
-        set(item.id.split('.'), 0, item.value, obj);
+        inverse(obj, item.id.split('.'), item.value);
     }
 
     return obj;
 }
 
-function set(path, index, value, obj){
-    // https://stackoverflow.com/questions/33066787/access-a-nested-property-with-a-string
-    let parent = path.slice(0, Math.min(index, path.length - 1)).reduce(function(p, prop) { return p[prop] }, obj);
-    let crumble = path[index];
-    
-    if (index < path.length - 1) {
-        
-        if (isNaN(crumble)){
-            parent[crumble] = parent[crumble] ?? (isNaN(path[index + 1]) ? {} : []);
-        } else {
-            parent = parent ?? [];
-            if (parent.length - 1 < crumble){
-                parent.push({});
-            }
-        }
-
-        set(path, index + 1, value, obj);
-        
-    } else if (index == path.length - 1){ // a leaf
-        parent[crumble] = value;
-    }
-}
 
 export { get, toState, fromState }
 
