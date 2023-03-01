@@ -45,7 +45,7 @@ function toState(json){
     for(let [key, value, path, parent] of traverse(json)) {
 
         if (value === null || typeof(value) !== "object"){
-            items.push({id: path.join('.'), value: value})
+            items.push({id: path.join('.'), value: value, timestamp: Date.UTC(), version: 0, deleted: 0})
         }
     }
 
