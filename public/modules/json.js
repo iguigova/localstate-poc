@@ -1,4 +1,3 @@
-
 // summary: flatten obj by enumerating properties' path and value
 // https://stackoverflow.com/questions/722668/traverse-all-the-nodes-of-a-json-object-tree-with-javascript
 function* traverse(obj, path = []) {
@@ -17,7 +16,6 @@ function* traverse(obj, path = []) {
 
 // summary: add value to obj at given path
 function inverse(obj, path, value, index = 0){
-
     let child = next(path, value, index);
 
     if (child){

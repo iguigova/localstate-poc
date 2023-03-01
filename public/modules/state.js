@@ -1,7 +1,7 @@
 import { open, put, getall } from "./storage.js";
 import { traverse, inverse } from "./json.js";
 
-function getlocal(dbname, storename){
+function getlocalstate(dbname, storename){
 
     return new Promise((resolve, reject) => {
         open(dbname, storename)
@@ -14,7 +14,7 @@ function getlocal(dbname, storename){
     });
 }
 
-function getremote(url){
+function getremotejson(url){
     return fetch(url)
         .then((response) => {
             if (!response.ok) {
@@ -34,9 +34,9 @@ function get(input){
     // https://developer.mozilla.org/en-US/docs/Web/API/URL
     const url = new URL(input);
     
-    return getlocal("unstaged", url.pathname + url.search)
-        .then((items) => getlocal(url.hostname, url.pathname + url.search))
-        .then((items) => getremote(url));
+    return getlocalstate("unstaged", url.pathname + url.search)
+        .then((items) => getlocalstate(url.hostname, url.pathname + url.search))
+        .then((items) => getremotejson(url));
 }
 
 function toState(json){
@@ -52,54 +52,16 @@ function toState(json){
     return items;
 }
 
-function fromState(items){
+function fromState(items, excludedeleted = true){
     let obj = isNaN(items && items.length > 0 && items[0].id.split('.')[0]) ? {} : [];
     
     for (let item of items){
-        inverse(obj, item.id.split('.'), item.value);
+        if (!excludedeleted || !item.deleted){
+            inverse(obj, item.id.split('.'), item.value);
+        }
     }
 
     return obj;
 }
 
-
 export { get, toState, fromState }
-
-/*
-[
-  {
-    "id": 1,
-    "title": "json-server",
-    "author": "typicode",
-    "comments": [
-      {
-        "id": 1,
-        "body": "some comment",
-        "postId": 1
-      }
-    ]
-  }
-]
-
-0.id = 1
-0.title = "json-server"
-0.comments.0.id = 1
-0.comments.0.body = "some comment"
-
-
-  {
-    "created_at":"MonSep3004:04:53+00002013",
-    "id_str":"384529256681725952",
-    "user": {
-      "id":31424214,
-      "location":"COLUMBUS"
-    },
-    "coordinates":{
-      "type":"Point",
-      "values":[
-         13,
-         99
-      ]
-    }
-  }
-*/
