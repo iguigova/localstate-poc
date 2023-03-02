@@ -1,8 +1,8 @@
 import { get } from "./modules/state.js";
 
-function read(input) {
-    get(input)
-        .then((items) => console.log(items))
+function sync(input) {
+    get(input, (data) => console.log(data))
+        //.then((data) => //write to host state and merge with unstaged // workers)
         .catch((error) => console.log(error));
 }  
 
@@ -11,10 +11,10 @@ var submit = document.getElementById("geturlsubmit")
 
 input.addEventListener("keypress", function(event) {
     if (event.key === "Enter") {
-        read(input.value);
+        sync(input.value);
     }
 });
 
 submit.addEventListener("click", function(event) {
-    read(input.value);
+    sync(input.value);
 });
