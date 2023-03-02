@@ -1,4 +1,4 @@
-import { toState, fromState } from "./modules/state.js";
+import { get, toState, fromState } from "./modules/state.js";
 
 let sarr = [
     [{ "id": 1 }, {"id": 2 }],
@@ -35,8 +35,7 @@ let sarr = [
     }];
 
 for (const s of sarr){
-    // console.log(s);
-    // console.log(toState(s));
-    // console.log(fromState(toState(s)));
-    console.log(JSON.stringify(fromState(toState(s))) === JSON.stringify(s));
+    console.assert(JSON.stringify(fromState(toState(s))) == JSON.stringify(s), "%o", { json: s, state: toState(s), result: fromState(toState(s))});
 }
+
+get('http://localhost:3000/posts?_embed=comments', (data) => console.assert(JSON.stringify(data) == JSON.stringify(sarr[2]), "%o", {json: sarr[2], result: data}));
