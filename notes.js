@@ -1,5 +1,7 @@
 json-server // https://stackoverflow.com/questions/6084360/using-node-js-as-a-simple-web-server/23122981?r=Saves_UserSavesList#23122981
 
+// https://stackoverflow.com/questions/73542644/get-request-with-js
+const url = "http://localhost:3000/posts?_embed=comments"; //"/books?" + new URLSearchParams({rank, title});
 
 //-----------
 

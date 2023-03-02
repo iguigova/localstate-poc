@@ -1,8 +1,11 @@
-import { get } from "./modules/state.js";
+import { get, stash } from "./modules/state.js";
 
-function sync(input) {
-    get(input, (data) => console.log(data))
-        //.then((data) => //write to host state and merge with unstaged // workers)
+function sync(input, ondata) {
+    // https://developer.mozilla.org/en-US/docs/Web/API/URL
+    const url = new URL(input);
+    
+    get(url, (data) => ondata ? ondata(data) : console.log(data))
+        .then((data) => stash(url, data)) // then merge with unstaged // workers)
         .catch((error) => console.log(error));
 }  
 

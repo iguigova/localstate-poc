@@ -57,6 +57,15 @@ function put(db, storename, items){
     })
 }
 
+function clear(db, storename){
+    
+    return new Promise((resolve, reject) => {
+        
+        inittx(db, storename, "readwrite", resolve, reject)
+            .then((store) => store.clear());
+    })
+}
+
 function getall(db, storename){
 
     return new Promise((resolve, reject) => {
@@ -84,4 +93,4 @@ function getall(db, storename){
 }
 
 
-export { open, put, getall };
+export { open, put, clear, getall };

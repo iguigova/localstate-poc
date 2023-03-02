@@ -18,6 +18,18 @@ let sarr = [
             }
         ]
     }],
+    [{  // properties are in alphanumeric order
+        "author": "typicode",
+        "comments": [
+            {
+                "body": "some comment",
+                "id": 1,
+                "postId": 1
+            }
+        ],
+        "id": 1,
+        "title": "json-server",
+    }],
     {
         "created_at":"MonSep3004:04:53+00002013",
         "id_str":"384529256681725952",
@@ -35,7 +47,10 @@ let sarr = [
     }];
 
 for (const s of sarr){
-    console.assert(JSON.stringify(fromState(toState(s))) == JSON.stringify(s), "%o", { json: s, state: toState(s), result: fromState(toState(s))});
+    console.assert(JSON.stringify(fromState(toState(s))) == JSON.stringify(s),
+                   "%o", { json: s, state: toState(s), result: fromState(toState(s))});
 }
 
-get('http://localhost:3000/posts?_embed=comments', (data) => console.assert(JSON.stringify(data) == JSON.stringify(sarr[2]), "%o", {json: sarr[2], result: data}));
+get(new URL('http://localhost:3000/posts?_embed=comments'),
+    (data) => console.assert(JSON.stringify(data) == JSON.stringify(sarr[3]) || JSON.stringify(data) == JSON.stringify(sarr[2]),
+                             "%o", {json: sarr[3], result: data}));

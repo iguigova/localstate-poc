@@ -1,4 +1,4 @@
-import { open, put, getall } from "./storage.js";
+import { open, put, clear, getall } from "./storage.js";
 import { traverse, inverse } from "./json.js";
 
 function getlocalstate(dbname, storename){
@@ -13,7 +13,7 @@ function getlocalstate(dbname, storename){
 function getlocal(url){
     return getlocalstate("unstaged", url.pathname + url.search)
         .then((state) => {
-            if (!state){
+            if (!state || state.length == 0){
                 return getlocalstate(url.hostname, url.pathname + url.search);
             }
 
@@ -32,24 +32,28 @@ function getremote(url){
         })
 }
 
-function get(input, ondata){
-    // https://stackoverflow.com/questions/73542644/get-request-with-js
-    // const url = "http://localhost:3000/posts?_embed=comments"; //"/books?" + new URLSearchParams({rank, title});
-
-    // https://developer.mozilla.org/en-US/docs/Web/API/URL
-    const url = new URL(input);
-
+function get(url, ondata){
     let hasdata = false;
     
     return getlocal(url)
         .then((data) => {
-            hasdata = data && ondata && ondata(data);
+            hasdata = data;
+            data && ondata && ondata(data);
         })
         .then(() => getremote(url))
         .then((data) => {
             !hasdata && data && ondata && ondata(data);
             return data;
         });
+}
+
+function stash(url, data){
+    var dbname = url.hostname;
+    var storename = url.pathname + url.search;
+    return open(dbname, storename)
+        .then((db) => clear(db, storename))
+        .then((db) => put(db, storename, toState(data)))
+        .then((db) => db.close());
 }
 
 function toState(json){
@@ -79,4 +83,4 @@ function fromState(items, excludedeleted = true){
     }
 }
 
-export { get, toState, fromState }
+export { get, stash, toState, fromState }
