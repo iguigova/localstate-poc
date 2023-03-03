@@ -52,23 +52,19 @@ async function get(url, ondata){
 }
 
 function stash(url, data){
-    const hostdbname = url.hostname;
-    const storename = url.pathname + url.search;
-    return putstate(hostdbname, storename, toState(data));
+    return putstate(url.hostname, url.pathname + url.search, toState(data));
 }
 
 async function merge(url){
-    let mergedstate = await getmergedstate(url);    
-    return putstate(localdbname, url.pathname + url.search, mergedstate);
+    return putstate(localdbname, url.pathname + url.search, await getmergedstate(url));
 }
 
 async function getmergedstate(url, mergefunc = ((s, t) => s.version > t.version ? s : t)){
-    const hostdbname = url.hostname;
     const storename = url.pathname + url.search;
 
     // note: already equivalently ordered by indexeddb
     const localstate = await getstate(localdbname, storename);
-    const hoststate = await getstate(hostdbname, storename);
+    const hoststate = await getstate(url.hostname, storename);
     
     // let mergedstate = [];
     // // https://stackoverflow.com/questions/10179815/get-loop-counter-index-using-for-of-syntax-in-javascript
