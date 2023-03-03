@@ -1,11 +1,13 @@
-import { get, stash } from "./modules/state.js";
+import { get, stash, merge } from "./modules/state.js";
 
 function sync(input, ondata) {
     // https://developer.mozilla.org/en-US/docs/Web/API/URL
     const url = new URL(input);
     
     get(url, (data) => ondata ? ondata(data) : console.log(data))
-        .then((data) => stash(url, data)) // then merge with unstaged // workers)
+        .then((data) => stash(url, data))
+        .then(() => merge(url))
+    // then diff
         .catch((error) => console.log(error));
 }  
 

@@ -1,7 +1,7 @@
 import { open, put, clear, getall } from "./storage.js";
 import { traverse, inverse } from "./json.js";
 
-function getlocalstate(dbname, storename){
+function getstate(dbname, storename){
     return open(dbname, storename)
         .then((db) => getall(db, storename))
         .then((result) => {
@@ -10,11 +10,20 @@ function getlocalstate(dbname, storename){
         });
 }
 
+function putstate(dbname, storename, state){
+    return open(localdbname, storename)
+        .then((db) => clear(db, storename))
+        .then((db) => put(db, storename, state))
+        .then((db) => db.close());
+}
+
+const localdbname = "local";
+
 function getlocal(url){
-    return getlocalstate("unstaged", url.pathname + url.search)
+    return getstate(localdbname, url.pathname + url.search)
         .then((state) => {
             if (!state || state.length == 0){
-                return getlocalstate(url.hostname, url.pathname + url.search);
+                return getstate(url.hostname, url.pathname + url.search);
             }
 
             return state;
@@ -32,29 +41,66 @@ function getremote(url){
         })
 }
 
-function get(url, ondata){
-    let hasdata = false;
+async function get(url, ondata){
+    const localdata = await getlocal(url);
+    localdata && ondata && ondata(localdata);
     
-    return getlocal(url)
-        .then((data) => {
-            hasdata = data;
-            data && ondata && ondata(data);
-        })
-        .then(() => getremote(url))
-        .then((data) => {
-            !hasdata && data && ondata && ondata(data);
-            return data;
-        });
+    const remotedata = await getremote(url);
+    !localdata && remotedata && ondata && ondata(remotedata);
+    
+    return remotedata;
 }
 
 function stash(url, data){
-    var dbname = url.hostname;
-    var storename = url.pathname + url.search;
-    return open(dbname, storename)
-        .then((db) => clear(db, storename))
-        .then((db) => put(db, storename, toState(data)))
-        .then((db) => db.close());
+    const hostdbname = url.hostname;
+    const storename = url.pathname + url.search;
+    return putstate(hostdbname, storename, toState(data));
 }
+
+async function merge(url){
+    let mergedstate = await getmergedstate(url);    
+    return putstate(localdbname, url.pathname + url.search, mergedstate);
+}
+
+async function getmergedstate(url, mergefunc = ((s, t) => s.version > t.version ? s : t)){
+    const hostdbname = url.hostname;
+    const storename = url.pathname + url.search;
+
+    // note: already equivalently ordered by indexeddb
+    const localstate = await getstate(localdbname, storename);
+    const hoststate = await getstate(hostdbname, storename);
+    
+    // let mergedstate = [];
+    // // https://stackoverflow.com/questions/10179815/get-loop-counter-index-using-for-of-syntax-in-javascript
+    // for (const [i, hostitem] of hoststate.entries()) {
+    //     let localitem = localstate[i];
+
+    //     if (localitem.id == hostitem.id){
+    //         mergedstate.push(mergefunc(localitem, hostitem));
+    //     } else {
+    //         localitem = localstate.find(item => item.id == hostitem.id) ?? hostitem;
+    //         if (localitem.id == hostitem.id){
+    //             mergedstate.push(mergefunc(localitem, hostitem));
+    //         }
+    //     }
+    // }
+    // // check for items in localstate that did not make it to mergedstate but we want to keep
+    // // https://stackoverflow.com/questions/1885557/simplest-code-for-array-intersection-in-javascript
+    // const hostdeletedoverride = localstate.filter(item => item.version > 0 && !mergedstate.some((m) => m.d == item.id));
+    // hostdeletedoverride.forEach((item) => mergedstate.push(item));
+
+    let mergedstate = localstate.filter(item => item.version > 0);
+    hoststate.filter(item => !mergedstate.some((m) => m.d == item.id)).forEach(item => mergedstate.push(item));
+    
+    return mergedstate;
+}
+
+// function diffs(unstaged, host){
+//     url -> path + search params
+
+//     take 1, 1
+//     if h
+// }
 
 function toState(json){
     let items = [];
@@ -83,4 +129,4 @@ function fromState(items, excludedeleted = true){
     }
 }
 
-export { get, stash, toState, fromState }
+export { get, stash, merge, toState, fromState }

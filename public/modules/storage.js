@@ -25,7 +25,7 @@ function open(dbname, storename){
     })
 }
 
-function inittx(db, storename, mode, resolve, reject){
+async function inittx(db, storename, mode, resolve, reject){
 
     let transaction = db.transaction(storename, mode);
     
@@ -41,7 +41,7 @@ function inittx(db, storename, mode, resolve, reject){
         reject && reject(transaction.error);
     }
 
-    return Promise.resolve(transaction.objectStore(storename));
+    return transaction.objectStore(storename);
 }
 
 function put(db, storename, items){
