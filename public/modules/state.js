@@ -1,12 +1,13 @@
-import { open, put, clear, getall } from "./storage.js";
+import { open, put, clear, getall, getmetadata } from "./storage.js";
 import { traverse, inverse } from "./json.js";
+import { getremote, postremote } from "./fetch.js"
 
 function getstate(dbname, storename){
     return open(dbname, storename)
         .then((db) => getall(db, storename))
         .then((result) => {
-            result.get('db').close();
-            return result.get('items');
+            result.db.close();
+            return result.items;
         });
 }
 
@@ -29,16 +30,6 @@ function getlocal(url){
             return state;
         })
         .then((state) => fromState(state));
-}
-
-function getremote(url){
-    return fetch(url)
-        .then((response) => {
-            if (!response.ok) {
-                throw new Error(`HTTP error ${response.status}`);
-            }
-            return response.json();
-        })
 }
 
 async function get(url, ondata){
@@ -91,12 +82,28 @@ async function getmergedstate(url, mergefunc = ((s, t) => s.version > t.version 
     return mergedstate;
 }
 
-// function diffs(unstaged, host){
-//     url -> path + search params
+async function diff(url){  
+    return open(localdbname)
+        .then((db) => getmetadata(db, true))
+        .then((metadata) => {
+            let result = [];
 
-//     take 1, 1
-//     if h
-// }
+            console.log(metadata.db);
+            metadata.stores
+                .filter(store => store.hasChanged)
+                .forEach(async store => {
+                    const storestate = await getstate(metadata.db, store.storename);
+                    console.log(storestate);
+                    result.push({url: store.storename, data: fromState(storestate)});
+                });
+
+            metadata.db.close();
+
+            console.log(result);
+            return result;
+        })
+        .then((diffs) => postremote(url, diffs));
+}
 
 function toState(json){
     let items = [];
@@ -125,4 +132,4 @@ function fromState(items, excludedeleted = true){
     }
 }
 
-export { get, stash, merge, toState, fromState }
+export { get, stash, merge, diff, toState, fromState }

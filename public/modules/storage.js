@@ -10,7 +10,8 @@ function open(dbname, storename){
         request.onupgradeneeded = function(event) {
 
             let db = request.result;
-            if (!db.objectStoreNames.contains(storename)) {
+            
+            if (storename && !db.objectStoreNames.contains(storename)) {
                 db.createObjectStore(storename, {keyPath: 'id'});
             }
         }
@@ -72,25 +73,31 @@ function getall(db, storename){
 
         inittx(db, storename, "readonly", null, reject)
             .then((store) => {
-               
-                let request = store.getAll();
-
+                const request = store.getAll();
+                
                 request.onsuccess = function() {
-                    const result = new Map()
-                    result.set('db', db);
-                    
-                    if (request.result !== undefined) {
-                        
-                        result.set('items', request.result);
-                    } else {
-                        result.set('items', []);
-                    }
-
-                    resolve(result);
+                    resolve({db: db, storename: storename, items: (request.result !== undefined) ? request.result : []});
                 };                
             });
     });
 }
 
+async function getmetadata(db, includestoreitems = false){
 
-export { open, put, clear, getall };
+    let metadata = {db: db, stores: []};
+    
+    for (const storename of db.objectStoreNames){
+
+        const result = await getall(db, storename);
+       
+        metadata.stores.push({
+            storename: storename,
+            hasChanged: result.items.some(item => item.verstion > 0),
+            items: includestoreitems ? result.items : []
+        });
+    }
+
+    return metadata; 
+}
+
+export { open, put, clear, getall, getmetadata };

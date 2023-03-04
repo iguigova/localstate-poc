@@ -1,4 +1,4 @@
-import { get, stash, merge } from "./modules/state.js";
+import { get, stash, merge, diff } from "./modules/state.js";
 
 function sync(input, ondata) {
     // https://developer.mozilla.org/en-US/docs/Web/API/URL
@@ -7,7 +7,7 @@ function sync(input, ondata) {
     get(url, (data) => ondata ? ondata(data) : console.log(data))
         .then((data) => stash(url, data))
         .then(() => merge(url))
-    // then diff
+        .then(() => diff(url))
         .catch((error) => console.log(error));
 }  
 
