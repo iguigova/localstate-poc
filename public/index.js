@@ -8,6 +8,7 @@ function sync(input, ondata) {
         .then((data) => stash(url, data))
         .then(() => merge(url))
         .then(() => diff(url))
+        .then((responses) => console.log(responses))
         .catch((error) => console.log(error));
 }  
 

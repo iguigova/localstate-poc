@@ -86,21 +86,16 @@ async function diff(url){
     return open(localdbname)
         .then((db) => getmetadata(db, true))
         .then((metadata) => {
-            let result = [];
-
-            console.log(metadata.db);
+            let diffs = [];
             metadata.stores
                 .filter(store => store.hasChanged)
-                .forEach(async store => {
-                    const storestate = await getstate(metadata.db, store.storename);
-                    console.log(storestate);
-                    result.push({url: store.storename, data: fromState(storestate)});
+                .forEach(store => {
+                    diffs.push({ url: store.storename, data: fromState(store.items)});
                 });
-
+            
             metadata.db.close();
-
-            console.log(result);
-            return result;
+            
+            return diffs;
         })
         .then((diffs) => postremote(url, diffs));
 }
@@ -111,7 +106,7 @@ function toState(json){
     for(let [key, value, path, parent] of traverse(json)) {
 
         if (value === null || typeof(value) !== "object"){
-            items.push({id: path.join('.'), value: value, timestamp: Date.UTC(), version: 0, deleted: 0, added: 0})
+            items.push({id: path.join('.'), value: value, timestamp: new Date().toUTCString(), version: 0, deleted: 0, added: 0})
         }
     }
 

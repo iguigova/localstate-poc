@@ -3,21 +3,26 @@ function getremote(url){
         .then((response) => tojson(response));
 }
 
-async function postremote(url, data = []){
-    const requests = getrequests(data, postrequestparams);
+async function postremote(url, datas = []){
+    const requests = getrequests(url, datas, postrequestparams);
     const responses = await Promise.all(requests);
-    let result = [];
+    
+    let json = [];
     
     for (const response of responses) {
-        result.push(response.tojson());
+        json.push(tojson(response));
     }
-
-    return result; 
+    
+    return Promise.all(json); 
 }
 
-function getrequests(data, requestparams){
+function getrequests(url, data, requestparams){
     let requests = [];
-    data.forEach((item) => requests.push(fetch(new Url(itme.url, url), requestparams(item.data))));
+        
+    for (const item of data){
+        requests.push(fetch(new URL(item.url, url), requestparams(item.data)));
+    }
+    
     return requests;
 }
 
