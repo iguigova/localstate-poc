@@ -1,26 +1,33 @@
-import { get, stash, merge, diff } from "./modules/state.js";
+import { get, stash, merge, diff, put } from "./modules/state.js";
 
-function sync(input, ondata) {
-    // https://developer.mozilla.org/en-US/docs/Web/API/URL
-    const url = new URL(input);
-    
+function sync(url, ondata) {  
     get(url, (data) => ondata ? ondata(data) : console.log(data))
         .then((data) => stash(url, data))
         .then(() => merge(url))
         .then(() => diff(url))
         .then((responses) => console.log(responses))
         .catch((error) => console.log(error));
-}  
+}
 
-var input = document.getElementById("geturlinput");
-var submit = document.getElementById("geturlsubmit")
+function update(url, data){
 
-input.addEventListener("keypress", function(event) {
+}
+
+var url = document.getElementById("url");
+var getsubmit = document.getElementById("getsubmit")
+var body = document.getElementById("body");
+var postsubmit = document.getElementById("postsubmit");
+
+url.addEventListener("keypress", function(event) {
     if (event.key === "Enter") {
-        sync(input.value);
+        sync(new URL(url.value), (data) => body.value = JSON.stringify(data));
     }
 });
 
-submit.addEventListener("click", function(event) {
-    sync(input.value);
+getsubmit.addEventListener("click", function(event) {
+    sync(new URL(url.value), (data) => body.value = JSON.stringify(data));
+});
+
+postsubmit.addEventListener("click", function(event) {
+    update(new URL(url.value), body.value);
 });

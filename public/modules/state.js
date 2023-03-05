@@ -1,4 +1,4 @@
-import { open, put, clear, getall, getmetadata } from "./storage.js";
+import { open, clear, putall, getall, getmetadata } from "./storage.js";
 import { traverse, inverse } from "./json.js";
 import { getremote, postremote } from "./fetch.js"
 
@@ -14,7 +14,7 @@ function getstate(dbname, storename){
 function putstate(dbname, storename, state){
     return open(dbname, storename)
         .then((db) => clear(db, storename))
-        .then((db) => put(db, storename, state))
+        .then((db) => putall(db, storename, state))
         .then((db) => db.close());
 }
 
@@ -40,6 +40,10 @@ async function get(url, ondata){
     !localdata && remotedata && ondata && ondata(remotedata);
     
     return remotedata;
+}
+
+function put(url, data){
+    var state = toState(data);
 }
 
 function stash(url, data){
@@ -127,4 +131,4 @@ function fromState(items, excludedeleted = true){
     }
 }
 
-export { get, stash, merge, diff, toState, fromState }
+export { get, stash, merge, diff, put, toState, fromState }

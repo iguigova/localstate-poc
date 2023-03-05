@@ -2,11 +2,14 @@
 <html>
   <head>
   <meta charset="UTF-8">
-  <title>HelloWorld</title>
+  <title>localstate - POC</title>
+  <link rel="stylesheet" href="index.css">
   </head>
   <body>
-    <input type="text" value="http://localhost:3000/posts" id="geturlinput"/>
-    <button id="geturlsubmit">submit</button>
+    <input id="url" type="text" value="http://localhost:3000/posts?_embed=comments"/>
+    <button id="getsubmit">GET</button>
+    <textarea id="body"> </textarea>
+    <button id="postsubmit">POST</button>
     
     <script type="module" src="index.js"></script>
     <script type="module" src="tests.js"></script>

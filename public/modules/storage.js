@@ -52,7 +52,15 @@ async function inittx(db, storename, mode, resolve, reject){
     return transaction.objectStore(storename);
 }
 
-function put(db, storename, items){
+function clear(db, storename){
+    return new Promise((resolve, reject) => {
+        
+        inittx(db, storename, "readwrite", resolve, reject)
+            .then((store) => store.clear());
+    })
+}
+
+function putall(db, storename, items){
     return new Promise((resolve, reject) => {
 
         inittx(db, storename, "readwrite", resolve, reject)
@@ -64,17 +72,7 @@ function put(db, storename, items){
     })
 }
 
-function clear(db, storename){
-    
-    return new Promise((resolve, reject) => {
-        
-        inittx(db, storename, "readwrite", resolve, reject)
-            .then((store) => store.clear());
-    })
-}
-
 function getall(db, storename){
-
     return new Promise((resolve, reject) => {
 
         inittx(db, storename, "readonly", null, reject)
@@ -89,7 +87,6 @@ function getall(db, storename){
 }
 
 async function getmetadata(db, includestoreitems = false){
-
     let metadata = {db: db, stores: []};
     
     for (const storename of db.objectStoreNames){
@@ -106,4 +103,4 @@ async function getmetadata(db, includestoreitems = false){
     return metadata; 
 }
 
-export { open, put, clear, getall, getmetadata };
+export { open, clear, putall, getall, getmetadata };

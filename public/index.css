@@ -1,0 +1,31 @@
+:root {
+    --xs-padding: 0.125em;
+    --padding: 0.25em;
+    --xl-padding: 0.5em;
+    --xxl-padding: 1em;
+
+    --border: 0.0625em;
+
+    --font: 16px; /*https://stackoverflow.com/questions/2989263/disable-auto-zoom-in-input-text-tag-safari-on-iphone*/
+    --xl-font: 2em;
+    
+    --xs-thumbnail: 4.625em;
+    --thumbnail: 11em;
+}
+
+* {
+    box-sizing: border-box; /*https://www.w3schools.com/css/css3_box-sizing.asp */
+    font-family: monospace;
+    display: block;
+    margin-top: var(--xl-padding);
+}
+
+input, textarea {
+    font-size: var(--font);
+    padding: var(--padding);
+    width: 100%;
+}
+
+#postbody {
+    height: 320px;
+}
