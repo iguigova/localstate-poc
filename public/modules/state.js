@@ -12,7 +12,7 @@ function getstate(dbname, storename){
 }
 
 function putstate(dbname, storename, state){
-    return open(localdbname, storename)
+    return open(dbname, storename)
         .then((db) => clear(db, storename))
         .then((db) => put(db, storename, state))
         .then((db) => db.close());

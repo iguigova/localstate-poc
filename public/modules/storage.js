@@ -1,14 +1,13 @@
 // https://javascript.info/indexeddb
 // https://www.w3.org/TR/IndexedDB
 
-function open(dbname, storename){
+function open(dbname, storename, version){
 
     return new Promise((resolve, reject) => {
         
-        const request = indexedDB.open(dbname);
+        const request = version ? indexedDB.open(dbname, version) : indexedDB.open(dbname);
 
         request.onupgradeneeded = function(event) {
-
             let db = request.result;
             
             if (storename && !db.objectStoreNames.contains(storename)) {
@@ -17,7 +16,15 @@ function open(dbname, storename){
         }
         
         request.onsuccess = function(event) {
-            resolve(request.result);
+            let db = request.result;
+
+            if (storename && !db.objectStoreNames.contains(storename)) {
+                db.close();
+                open(dbname, storename, db.version + 1)
+                    .then((db) => resolve(db));
+            } else {
+                resolve(request.result);
+            }
         };
 
         request.onerror = function(event) {
@@ -46,7 +53,6 @@ async function inittx(db, storename, mode, resolve, reject){
 }
 
 function put(db, storename, items){
-    
     return new Promise((resolve, reject) => {
 
         inittx(db, storename, "readwrite", resolve, reject)
