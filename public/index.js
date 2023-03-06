@@ -6,17 +6,20 @@ function sync(url, ondata) {
         .then(() => merge(url))
         .then(() => diff(url))
         .then((responses) => console.log(responses))
-        .catch((error) => console.log(error));
+        .catch((error) => console.error(error));
 }
 
-function update(url, data){
-
+function update(method, url, data){
+    put(method, url, data)
+        .then(() => diff(url))
+        .then((responses) => console.log(responses))
+        .catch((error) => console.error(error));
 }
 
 var url = document.getElementById("url");
 var getsubmit = document.getElementById("getsubmit")
 var body = document.getElementById("body");
-var postsubmit = document.getElementById("postsubmit");
+var putsubmit = document.getElementById("putsubmit");
 
 url.addEventListener("keypress", function(event) {
     if (event.key === "Enter") {
@@ -28,6 +31,6 @@ getsubmit.addEventListener("click", function(event) {
     sync(new URL(url.value), (data) => body.value = JSON.stringify(data));
 });
 
-postsubmit.addEventListener("click", function(event) {
-    update(new URL(url.value), body.value);
+putsubmit.addEventListener("click", function(event) {
+    update("PUT", new URL(url.value), JSON.parse(body.value));
 });

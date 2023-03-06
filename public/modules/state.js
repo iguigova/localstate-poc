@@ -1,6 +1,6 @@
 import { open, clear, putall, getall, getmetadata } from "./storage.js";
 import { traverse, inverse } from "./json.js";
-import { getremote, postremote } from "./fetch.js"
+import { getremote, sendallremote } from "./fetch.js"
 
 function getstate(dbname, storename){
     return open(dbname, storename)
@@ -42,10 +42,6 @@ async function get(url, ondata){
     return remotedata;
 }
 
-function put(url, data){
-    var state = toState(data);
-}
-
 function stash(url, data){
     return putstate(url.hostname, url.pathname + url.search, toState(data));
 }
@@ -54,36 +50,61 @@ async function merge(url){
     return putstate(localdbname, url.pathname + url.search, await getmergedstate(url));
 }
 
-async function getmergedstate(url, mergefunc = ((s, t) => s.version > t.version ? s : t)){
+async function getmergedstate(url){
     const storename = url.pathname + url.search;
 
-    // note: already equivalently ordered by indexeddb
     const localstate = await getstate(localdbname, storename);
     const hoststate = await getstate(url.hostname, storename);
     
-    // let mergedstate = [];
-    // // https://stackoverflow.com/questions/10179815/get-loop-counter-index-using-for-of-syntax-in-javascript
-    // for (const [i, hostitem] of hoststate.entries()) {
-    //     let localitem = localstate[i];
+    let mergedstate = localstate.filter(item => item.version > 0);  // updated
 
-    //     if (localitem.id == hostitem.id){
-    //         mergedstate.push(mergefunc(localitem, hostitem));
-    //     } else {
-    //         localitem = localstate.find(item => item.id == hostitem.id) ?? hostitem;
-    //         if (localitem.id == hostitem.id){
-    //             mergedstate.push(mergefunc(localitem, hostitem));
-    //         }
-    //     }
-    // }
-    // // check for items in localstate that did not make it to mergedstate but we want to keep
-    // // https://stackoverflow.com/questions/1885557/simplest-code-for-array-intersection-in-javascript
-    // const hostdeletedoverride = localstate.filter(item => item.version > 0 && !mergedstate.some((m) => m.d == item.id));
-    // hostdeletedoverride.forEach((item) => mergedstate.push(item));
+    // https://stackoverflow.com/questions/1885557/simplest-code-for-array-intersection-in-javascript
+    hoststate.filter(item => !mergedstate.some((m) => m.id == item.id)).forEach(item => mergedstate.push(item)); // added
 
-    let mergedstate = localstate.filter(item => item.version > 0);
-    hoststate.filter(item => !mergedstate.some((m) => m.d == item.id)).forEach(item => mergedstate.push(item));
+    localstate.filter(item => item.version == 0 && !mergedstate.some((m) => m.id == item.id)).forEach(item => { // deleted
+        item.deleted = 1;
+        mergedstate.push(item)
+    }); 
     
     return mergedstate;
+}
+
+async function put(method, url, data){
+    // TODO: update all affected stores 
+    return putstate(localdbname, url.pathname + url.search, await getupdatedstate(url, data));
+}
+
+async function getupdatedstate(url, data){
+    const storename = url.pathname;
+
+    const newstate = toState(data);
+    const localstate = await getstate(localdbname, storename);
+
+    let updatedstate = [];
+    // https://stackoverflow.com/questions/10179815/get-loop-counter-index-using-for-of-syntax-in-javascript
+    for (const [i, newitem] of newstate.entries()) {
+        let localitem = localstate[i];
+         if (!localitem || localitem.id != newitem.id){
+            localitem = localstate.find(item => item.id == newitem.id) ?? newitem; //updated or added
+        }
+ 
+        if (localitem.value != newitem.value){
+            localitem.timestamp = new Date().toUTCString();
+            localitem.version++;
+            localitem.value = newitem.value;
+        }
+
+        updatedstate.push(localitem);
+     }
+
+    localstate.filter(item => !updatedstate.some((u) => u.id == item.id)).forEach((item) => { // deleted
+        item.timestamp = new Date().toUTCString();
+        item.version++;
+        item.deleted = 1;
+        updatedstate.push(item);
+    });
+
+    return updatedstate;
 }
 
 async function diff(url){  
@@ -94,14 +115,15 @@ async function diff(url){
             metadata.stores
                 .filter(store => store.hasChanged)
                 .forEach(store => {
-                    diffs.push({ url: store.storename, data: fromState(store.items)});
+                    diffs.push({method: "PUT", url: store.storename, data: fromState(store.items)}); // TODO: handle all changes
                 });
             
             metadata.db.close();
             
             return diffs;
         })
-        .then((diffs) => postremote(url, diffs));
+        .then((diffs) => sendallremote(url, diffs));
+        // TODO: reset version to 0
 }
 
 function toState(json){
@@ -113,7 +135,7 @@ function toState(json){
             items.push({id: path.join('.'), value: value, timestamp: new Date().toUTCString(), version: 0, deleted: 0, added: 0})
         }
     }
-
+    
     return items;
 }
 
