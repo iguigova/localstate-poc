@@ -92,14 +92,15 @@ async function getmetadata(db, includestoreitems = false){
     for (const storename of db.objectStoreNames){
 
         const result = await getall(db, storename);
-        
+
         metadata.stores.push({
             storename: storename,
-            hasChanged: result.items.some(item => item.verstion > 0),
+            hasChanged: result.items.some(item => item.version > 0),
             items: includestoreitems ? result.items : []
         });
     }
 
+    console.log(metadata);
     return metadata; 
 }
 
